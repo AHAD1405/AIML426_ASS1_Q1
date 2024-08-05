@@ -7,7 +7,23 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 import pandas
 
+population_size = 50   # Population size 
+generations = 100   # number of generations to run the Genetic Algorithm
+
 def create_dataset(file_name):
+    """
+    Reads the dataset file and extracts the necessary information for the knapsack problem.
+
+    Args:
+        file_name (str): The name or path of the file containing the dataset.
+
+    Returns:
+        tuple: A tuple containing the following elements:
+            - items_data (list): A list of dictionaries, where each dictionary represents an item with its weight and value.
+            - max_capacity (int): The maximum capacity of the knapsack.
+            - item_count (int): The total number of items in the dataset.
+            - optimal_value (int): The optimal or best possible value that can be achieved for the given dataset.
+    """
     weights = []
     values = []
     max_capacity = 0   # value of maximume weights
@@ -35,11 +51,22 @@ def create_dataset(file_name):
 
     return item_dict, max_capacity, item_count, optimal_value
 
+def initial_pop(population_size, num_items):
+    """
+        Generates the initial population of individuals.
+        Each individual is represented as a binary vector (0s and 1s) of length len(items).
+    """
+    random.seed(64)
+    return [np.random.randint(2, size=num_items) for _ in range(population_size)]
+
 def main():
     # load data 
-    dataset_file = ''
-    items_data, max_capacity, item_count, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
-    # test merge brach.....
+    dataset_file = '10_269'
+    knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
+
+    # Initialize populations
+    populations = initial_pop(population_size, num_items)
+
 
 if __name__ == "__main__":
     main()
