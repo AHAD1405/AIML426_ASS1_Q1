@@ -53,8 +53,16 @@ def create_dataset(file_name):
 
 def initial_pop(population_size, num_items):
     """
-        Generates the initial population of individuals.
-        Each individual is represented as a binary vector (0s and 1s) of length len(items).
+    Generate the initial population for the genetic algorithm.
+
+    Args:
+        population_size (int): The desired size of the initial population.
+        num_items (int): The number of items in the knapsack problem.
+
+    Returns:
+        list: A list of individuals, where each individual is a binary vector
+              representing a potential solution to the knapsack problem.
+              The length of each individual is equal to `num_items`.
     """
     random.seed(64)
     return [np.random.randint(2, size=num_items) for _ in range(population_size)]
