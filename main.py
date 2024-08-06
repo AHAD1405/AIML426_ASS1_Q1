@@ -67,6 +67,46 @@ def initial_pop(population_size, num_items):
     random.seed(64)
     return [np.random.randint(2, size=num_items) for _ in range(population_size)]
 
+def calculate_fitness(individual, items, max_capicity):
+    """
+        This function calculates the fitness of an individual. 
+        The fitness is the total value of the items included in the knapsack.
+    """
+    total_weight = sum([items['weights'][i] * individual[i] for i in range(len(items['weights']))])
+    total_value = sum([items['values'][i] * individual[i] for i in range(len(items['values']))])
+    if total_weight > max_capicity:
+        return 0
+    else:
+        return total_value
+
+
+def selection(population, knapsack_items, max_capacity, tournament_size=3):
+    """
+    Performs selection using the tournament selection strategy.
+
+    Args:
+        population (list): A list of individuals representing the current population.
+        tournament_size (int): The number of individuals to participate in each tournament.
+
+    Returns:
+        list: A list of selected individuals for reproduction.
+    """
+    selected_individuals = []
+
+    for _ in range(len(population)):
+        # Select tournament_size individuals randomly from the population
+        tournament = random.sample(population, tournament_size)
+
+        # Find the fittest individual in the tournament
+        tournament_fitnesses = [calculate_fitness(individual, knapsack_items, max_capacity) for individual in tournament]
+        fittest_idx = tournament_fitnesses.index(max(tournament_fitnesses))
+        fittest_individual = tournament[fittest_idx]
+
+        # Add the fittest individual to the list of selected individuals
+        selected_individuals.append(fittest_individual)
+
+    return selected_individuals
+
 def main():
     # load data 
     dataset_file = '10_269'
@@ -75,6 +115,9 @@ def main():
     # Initialize populations
     populations = initial_pop(population_size, num_items)
 
+    # Apply Selection process
+    for generation in range(generations):
+        population = selection(populations, knapsack_items, max_capacity)
 
 if __name__ == "__main__":
     main()
