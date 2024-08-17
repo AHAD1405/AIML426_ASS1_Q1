@@ -129,7 +129,7 @@ def mutation(individual, items):
         - mutated_individual (list): A new list representing the mutated individual's genetic vector after applying the mutation operation.
     """
     mutated_individual = individual.copy()
-    for i in range(len(items)):
+    for i in range(items):
         if random.random() < mutation_rate:
             mutated_individual[i] = 1 - mutated_individual[i]
     return mutated_individual
@@ -150,8 +150,8 @@ def main():
         for i in range(population_size // 2):
             parent1, parent2 = random.sample(population, 2)
             child1, child2 = crossover(parent1, parent2, num_items)
-            new_population.append(mutation(child1, knapsack_items))
-            new_population.append(mutation(child2, knapsack_items))
+            new_population.append(mutation(child1, num_items))
+            new_population.append(mutation(child2, num_items))
     
     population = new_population
 
