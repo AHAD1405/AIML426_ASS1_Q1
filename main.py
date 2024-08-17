@@ -9,6 +9,7 @@ import pandas
 
 population_size = 50   # Population size 
 generations = 100   # number of generations to run the Genetic Algorithm
+mutation_rate = 0.2
 
 def create_dataset(file_name):
     """
@@ -79,7 +80,6 @@ def calculate_fitness(individual, items, max_capicity):
     else:
         return total_value
 
-
 def selection(population, knapsack_items, max_capacity, tournament_size=3):
     """
     Performs selection using the tournament selection strategy.
@@ -107,6 +107,33 @@ def selection(population, knapsack_items, max_capacity, tournament_size=3):
 
     return selected_individuals
 
+def crossover(parent1, parent2, items):
+    """
+        The function chooses a random crossover point, 
+        then creates two new individuals by concatenating the genetic material of the two parents at that point
+    """
+    crossover_point = random.randint(1, items - 1)
+    child1 = np.concatenate((parent1[:crossover_point], parent2[crossover_point:]))
+    child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
+    return child1, child2
+
+def mutation(individual, items):
+    """
+    The function iterates over each element of the individual's genetic vector and, 
+    with probability mutation_rate, flips the element (i.e., changes 0 to 1 or 1 to 0)
+
+    PARAM: 
+        - individual (list): A list representing the genetic vector or chromosome of an individual in the population.
+        - items: A list of tuples, where each tuple represents an item with its weight and value (weight, value).
+    RETURN:
+        - mutated_individual (list): A new list representing the mutated individual's genetic vector after applying the mutation operation.
+    """
+    mutated_individual = individual.copy()
+    for i in range(len(items)):
+        if random.random() < mutation_rate:
+            mutated_individual[i] = 1 - mutated_individual[i]
+    return mutated_individual
+
 def main():
     # load data 
     dataset_file = '10_269'
@@ -118,6 +145,15 @@ def main():
     # Apply Selection process
     for generation in range(generations):
         population = selection(populations, knapsack_items, max_capacity)
+
+        new_population = []
+        for i in range(population_size // 2):
+            parent1, parent2 = random.sample(population, 2)
+            child1, child2 = crossover(parent1, parent2, num_items)
+            new_population.append(mutation(child1, knapsack_items))
+            new_population.append(mutation(child2, knapsack_items))
+    
+    population = new_population
 
 if __name__ == "__main__":
     main()
