@@ -10,6 +10,7 @@ import pandas
 population_size = 50   # Population size 
 generations = 100   # number of generations to run the Genetic Algorithm
 mutation_rate = 0.2
+run_no = 5  # number of runs GA
 
 def create_dataset(file_name):
     """
@@ -49,10 +50,10 @@ def create_dataset(file_name):
         else: optimal_value = 1514
         
         item_dict = {"weights":weights ,"values":values}
-
+    
     return item_dict, max_capacity, item_count, optimal_value
 
-def initial_pop(population_size, num_items):
+def initial_pop(population_size, num_items, seed_val):
     """
     Generate the initial population for the genetic algorithm.
 
@@ -65,7 +66,7 @@ def initial_pop(population_size, num_items):
               representing a potential solution to the knapsack problem.
               The length of each individual is equal to `num_items`.
     """
-    random.seed(64)
+    random.seed(seed_val)
     return [np.random.randint(2, size=num_items) for _ in range(population_size)]
 
 def calculate_fitness(individual, items, max_capicity):
@@ -134,26 +135,101 @@ def mutation(individual, items):
             mutated_individual[i] = 1 - mutated_individual[i]
     return mutated_individual
 
+def calc_value_wights(individual, items):
+    """
+    Calculate the total value and total weight of the items included in an individual's solution.
+
+    Args:
+        individual (list): A binary list representing an individual's solution, where 1 indicates that the item is included, and 0 indicates that it is not included.
+        items (dict): A dictionary containing the weights and values of the items in the knapsack problem. It should have two keys: 'weights' and 'values', each mapping to a list of corresponding weights and values for the items.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - total_values (int): The total value of the items included in the individual's solution.
+            - total_weights (int): The total weight of the items included in the individual's solution.
+    """
+    total_weights = sum([items['weights'][i] * individual[i] for i in range(len(items['weights']))])
+    total_values = sum([items['values'][i] * individual[i] for i in range(len(items['values']))])
+    return total_values, total_weights
+
+def find_best_individual(population, items_val_w, max_capacity):
+    """
+        Find the best individual from a given population based on the fitness values and the maximum capacity constraint.
+
+        Args:
+            population (list): A list of individuals.
+            items_val_w (dict): A dictionary containing the weights and values of the items in the knapsack.
+            max_capacity (int): The maximum capacity of the knapsack.
+
+        Returns:
+            dict: A dictionary representing the best individual found in the population. The dictionary has the following keys:
+                - 'value' (int): The total value of the items included in the best individual's solution.
+                - 'weight' (int): The total weight of the items included in the best individual's solution.
+                - 'individual' (list): The binary array representing the best individual's solution.
+    """
+    best_individual = dict()
+    best_individual['value'] = 0
+
+    for individual in population:
+        # calc total values and weights for current individual
+        individual_value, individual_wight = calc_value_wights(individual, items_val_w)
+
+        if individual_value > best_individual['value'] and individual_wight <= max_capacity:
+            best_individual['value'] = individual_value
+            best_individual['weight'] = individual_wight
+            best_individual['individual'] = individual
+
+    return best_individual
+
 def main():
     # load data 
     dataset_file = '10_269'
     knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
-
-    # Initialize populations
-    populations = initial_pop(population_size, num_items)
-
-    # Apply Selection process
-    for generation in range(generations):
-        population = selection(populations, knapsack_items, max_capacity)
-
-        new_population = []
-        for i in range(population_size // 2):
-            parent1, parent2 = random.sample(population, 2)
-            child1, child2 = crossover(parent1, parent2, num_items)
-            new_population.append(mutation(child1, num_items))
-            new_population.append(mutation(child2, num_items))
     
-    population = new_population
+
+    # run GA for 5 times
+    best_weights = []  # Store summation weight of best individual each run
+    best_values = []  # Store summation value of best individual each run 
+    best_individuals = []
+
+    for run in range(run_no):
+        # Generate a different seed for each run
+        seed_value = random.randint(0, 100)
+
+        # Initialize populations
+        populations = initial_pop(population_size, num_items, seed_value)
+
+        # Apply Selection process
+        for generation in range(generations):
+            population = selection(populations, knapsack_items, max_capacity)
+
+            new_population = []
+            # Apply genetic operation 
+            for i in range(population_size // 2):
+                parent1, parent2 = random.sample(population, 2)
+                child1, child2 = crossover(parent1, parent2, num_items)
+                new_population.append(mutation(child1, num_items))
+                new_population.append(mutation(child2, num_items))
+
+            # Evaluate fitness of the new population
+            new_population = [(individual, calculate_fitness(individual, knapsack_items, max_capacity)) for individual in new_population]
+
+            # Sort the new population based on fitness
+            new_population = sorted(new_population, key=lambda x: x[1], reverse=True)
+
+            # Select the fittest individuals for the next generation
+            population = [individual for individual, _ in new_population[:population_size]]
+
+        # Find the best population from produced population
+        temp_best_solution = find_best_individual(population, knapsack_items, max_capacity)
+
+        # Store best (indivisual, values, wights) for current run
+        best_individuals.append(temp_best_solution['individual'])
+        best_values.append(temp_best_solution['value'])
+        best_weights.append(temp_best_solution['weight'])
+
+    runs_best_individual = {'best_individuals':best_individuals, 'best_weights':best_weights, 'best_values':best_values}
+
 
 if __name__ == "__main__":
     main()
