@@ -5,7 +5,8 @@ from sklearn.datasets import load_iris
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
-import pandas
+import pandas as pd
+import math
 
 population_size = 50   # Population size 
 generations = 100   # number of generations to run the Genetic Algorithm
@@ -81,7 +82,7 @@ def calculate_fitness(individual, items, max_capicity):
     else:
         return total_value
 
-def selection(population, knapsack_items, max_capacity, tournament_size=3):
+def selection(population, knapsack_items, max_capacity, tournament_size=5):
     """
     Performs selection using the tournament selection strategy.
 
@@ -169,6 +170,8 @@ def find_best_individual(population, items_val_w, max_capacity):
     """
     best_individual = dict()
     best_individual['value'] = 0
+    best_individual['weight'] = 0
+    best_individual['individual'] = [0] * int(len(items_val_w['weights']))
 
     for individual in population:
         # calc total values and weights for current individual
@@ -181,9 +184,69 @@ def find_best_individual(population, items_val_w, max_capacity):
 
     return best_individual
 
+def calculate_stats(list_value):
+    """
+    Calculate the mean and standard deviation of a lists.
+
+    Args:
+        list_value (list): The first list of numbers.
+
+    Returns:
+        tuple: A tuple containing two elements:
+            - mean1 (float): The mean of list.
+            - std_dev1 (float): The standard deviation of list.
+    """
+    # Calculate the mean of list
+    mean1 = sum(list_value) / len(list_value)
+
+    # Calculate the standard deviation of list
+    squared_diffs = [(x - mean1) ** 2 for x in list_value]
+    variance1 = sum(squared_diffs) / len(list_value)
+    std_dev1 = math.sqrt(variance1)
+
+    return mean1, std_dev1
+
+def create_table(total_wights_li, total_values_li, mean_value, std_value,
+                    mean_wight, std_wight):
+    """
+    Create a dataset with two columns from two input lists.
+
+    Args:
+        list1 (list): The first list of values.
+        list2 (list): The second list of values.
+        column1_name (str): The name of the first column.
+        column2_name (str): The name of the second column.
+
+    Returns:
+        pandas.DataFrame: A pandas DataFrame containing the two columns.
+    """
+    # Check if the lists have the same length
+    if len(total_wights_li) != len(total_values_li):
+        raise ValueError("The input lists must have the same length.")
+
+    # First column
+    first_column = ['Run 1','Run 2','Run 3','Run 4','Run 5']
+
+    # Create a dictionary with the two lists as values
+    data = {'': first_column, 'Total value': total_values_li, 'Total Wight': total_wights_li}
+
+    # Create a pandas DataFrame from the dictionary
+    data_table = pd.DataFrame(data)
+
+    # Create a new DataFrame with the mean and concatenate it with (data_table)
+    mean_row = pd.DataFrame({'': ['Mean'], 'Total value': [mean_value], 'Total Wight': [mean_wight]})
+    data_table = pd.concat([data_table, mean_row], ignore_index=True)
+
+    # Create a new DataFrame with the stander deviation and concatenate it with (data_table)
+    std_row = pd.DataFrame({'': ['STD'], 'Total value': [std_value], 'Total Wight': [std_wight]})
+    data_table = pd.concat([data_table, std_row], ignore_index=True)
+
+
+    return data_table
+
 def main():
     # load data 
-    dataset_file = '10_269'
+    dataset_file = '10_269'  # 23_10000  10_269  100_995
     knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
     
 
@@ -228,8 +291,18 @@ def main():
         best_values.append(temp_best_solution['value'])
         best_weights.append(temp_best_solution['weight'])
 
+    # Store wights and values of best 5 individual
     runs_best_individual = {'best_individuals':best_individuals, 'best_weights':best_weights, 'best_values':best_values}
 
+    # Create a table that store 'mean' and 'stander deviation' for 5 best solution (runs_best_individual)
+    best_wights_mean, best_wights_std = calculate_stats(best_weights)
+    best_values_mean, best_values_std = calculate_stats(best_values)
+
+    # Create a table hold best 5 solutions with corresponded values, which including: values, wights, mean and STD
+    data_table = create_table(runs_best_individual['best_weights'], runs_best_individual['best_values'], best_values_mean, 
+                              best_values_std, best_wights_mean, best_wights_std)
+
+    print(data_table)
 
 if __name__ == "__main__":
     main()
