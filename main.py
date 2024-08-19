@@ -47,7 +47,7 @@ def create_dataset(file_name):
         
         # Find the vlaue of optimal_value paramener. depend on value of (max_capacity) 
         if max_capacity == 269: optimal_value = 295
-        elif max_capacity == 1000: optimal_value = 9767
+        elif max_capacity == 10000: optimal_value = 9767
         else: optimal_value = 1514
         
         item_dict = {"weights":weights ,"values":values}
@@ -246,7 +246,7 @@ def create_table(total_wights_li, total_values_li, mean_value, std_value,
 
 def main():
     # load data 
-    dataset_file = '10_269'  # 23_10000  10_269  100_995
+    dataset_file = '23_10000'  # 23_10000  10_269  100_995
     knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
     
 
@@ -302,6 +302,7 @@ def main():
     data_table = create_table(runs_best_individual['best_weights'], runs_best_individual['best_values'], best_values_mean, 
                               best_values_std, best_wights_mean, best_wights_std)
 
+    print('Optimal Value is: ', optimal_value)
     print(data_table)
 
 if __name__ == "__main__":
