@@ -8,10 +8,7 @@ from sklearn.metrics import accuracy_score
 import pandas as pd
 import math
 
-population_size = 50   # Population size 
-generations = 100   # number of generations to run the Genetic Algorithm
-mutation_rate = 0.2
-run_no = 5  # number of runs GA
+
 
 def create_dataset(file_name):
     """
@@ -245,6 +242,11 @@ def create_table(total_wights_li, total_values_li, mean_value, std_value,
     return data_table
 
 def main():
+    # parameter setting 
+    population_size = 50   # Population size 
+    generations = 100   # number of generations to run the Genetic Algorithm
+    mutation_rate = 0.2
+    run_no = 5  # number of runs GA
     # load data 
     dataset_file = '23_10000'  # 23_10000  10_269  100_995
     knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
@@ -257,10 +259,10 @@ def main():
 
     for run in range(run_no):
         # Generate a different seed for each run
-        seed_value = random.randint(0, 100)
+        seed_value = [20, 40, 60, 80, 100]
 
         # Initialize populations
-        populations = initial_pop(population_size, num_items, seed_value)
+        populations = initial_pop(population_size, num_items, seed_value[run])
 
         # Apply Selection process
         for generation in range(generations):
