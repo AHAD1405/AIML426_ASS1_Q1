@@ -267,6 +267,12 @@ def main():
         for generation in range(generations):
             population = selection(populations, knapsack_items, max_capacity)
 
+            # Ilitism 
+            pop_fitness = [(calculate_fitness(individual, knapsack_items, max_capacity)) for individual in population]
+
+            elite_idx = np.argsort(pop_fitness)[::-1][:2]
+            best_individuals = [population[i] for i in elite_idx]
+
             new_population = []
             # Apply genetic operation 
             for i in range(population_size // 2):
@@ -274,6 +280,9 @@ def main():
                 child1, child2 = crossover(parent1, parent2, num_items)
                 new_population.append(mutation(child1, num_items, mutation_rate))
                 new_population.append(mutation(child2, num_items, mutation_rate))
+
+            # iliitism to new population
+            new_population.extend(best_individuals)
 
             # Evaluate fitness of the new population
             new_population = [(individual, calculate_fitness(individual, knapsack_items, max_capacity)) for individual in new_population]
@@ -283,14 +292,28 @@ def main():
 
             # Update population with a new ossspring, Select the fittest individuals for the next generation
             population = [individual for individual, _ in new_population[:population_size]]
+            
+            # Stop criteria: if the best individual in the current generation has the optimal value, break the loop go to next run
+            optimal_individual = find_best_individual(population, knapsack_items, max_capacity)
+            if optimal_individual['value'] == optimal_value:
+                break
+            else:
+                optimal_individual = []
+        
+        # check if optimal_individual is not empty, then store the best individual for current run
+        # otherwise store the best individual from the produced population
+        if optimal_individual != []:
+            best_individuals.append(optimal_individual['individual'])
+            best_values.append(optimal_individual['value'])
+            best_weights.append(optimal_individual['weight'])
+        else:
+            # Find the best population from produced population
+            temp_best_solution = find_best_individual(population, knapsack_items, max_capacity)
 
-        # Find the best population from produced population
-        temp_best_solution = find_best_individual(population, knapsack_items, max_capacity)
-
-        # Store best (indivisual, values, wights) for current run
-        best_individuals.append(temp_best_solution['individual'])
-        best_values.append(temp_best_solution['value'])
-        best_weights.append(temp_best_solution['weight'])
+            # Store best (indivisual, values, wights) for current run
+            best_individuals.append(temp_best_solution['individual'])
+            best_values.append(temp_best_solution['value'])
+            best_weights.append(temp_best_solution['weight'])
 
     # Store wights and values of best 5 individual
     runs_best_individual = {'best_individuals':best_individuals, 'best_weights':best_weights, 'best_values':best_values}
