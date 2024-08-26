@@ -9,7 +9,6 @@ import pandas as pd
 import math
 
 
-
 def create_dataset(file_name):
     """
     Reads the dataset file and extracts the necessary information for the knapsack problem.
@@ -116,7 +115,7 @@ def crossover(parent1, parent2, items):
     child2 = np.concatenate((parent2[:crossover_point], parent1[crossover_point:]))
     return child1, child2
 
-def mutation(individual, items):
+def mutation(individual, items, mutation_rate):
     """
     The function iterates over each element of the individual's genetic vector and, 
     with probability mutation_rate, flips the element (i.e., changes 0 to 1 or 1 to 0)
@@ -244,22 +243,22 @@ def create_table(total_wights_li, total_values_li, mean_value, std_value,
 def main():
     # parameter setting 
     population_size = 50   # Population size 
-    generations = 100   # number of generations to run the Genetic Algorithm
+    generations = 50   # number of generations to run the Genetic Algorithm
     mutation_rate = 0.2
     run_no = 5  # number of runs GA
     # load data 
-    dataset_file = '23_10000'  # 23_10000  10_269  100_995
+    dataset_file = '10_269'  # 23_10000  10_269  100_995
     knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
     
-
     # run GA for 5 times
     best_weights = []  # Store summation weight of best individual each run
     best_values = []  # Store summation value of best individual each run 
     best_individuals = []
 
+    seed_value = [20, 40, 60, 80, 100]
+
     for run in range(run_no):
         # Generate a different seed for each run
-        seed_value = [20, 40, 60, 80, 100]
 
         # Initialize populations
         populations = initial_pop(population_size, num_items, seed_value[run])
@@ -273,8 +272,8 @@ def main():
             for i in range(population_size // 2):
                 parent1, parent2 = random.sample(population, 2)
                 child1, child2 = crossover(parent1, parent2, num_items)
-                new_population.append(mutation(child1, num_items))
-                new_population.append(mutation(child2, num_items))
+                new_population.append(mutation(child1, num_items, mutation_rate))
+                new_population.append(mutation(child2, num_items, mutation_rate))
 
             # Evaluate fitness of the new population
             new_population = [(individual, calculate_fitness(individual, knapsack_items, max_capacity)) for individual in new_population]
@@ -282,7 +281,7 @@ def main():
             # Sort the new population based on fitness
             new_population = sorted(new_population, key=lambda x: x[1], reverse=True)
 
-            # Select the fittest individuals for the next generation
+            # Update population with a new ossspring, Select the fittest individuals for the next generation
             population = [individual for individual, _ in new_population[:population_size]]
 
         # Find the best population from produced population
