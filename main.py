@@ -8,6 +8,7 @@ from sklearn.metrics import accuracy_score
 import pandas as pd
 import math
 import os
+import matplotlib.pyplot as plt
 
 
 def create_dataset(file_name):
@@ -246,6 +247,25 @@ def create_table(total_wights_li, total_values_li, mean_value, std_value,
 
     return data_table
 
+def plot_curve(best_weights):
+    average_fitness = []
+
+    for weights in best_weights:
+        average_fitness.append(sum(weights) / len(best_weights))
+    #average_fitness.append(sum(best_weights) / len(best_weights))
+
+
+    generations = list(range(1, len(average_fitness) + 1))
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(generations, average_fitness, marker='o', linestyle='-', color='b')
+    plt.xlabel('Number of Generations')
+    plt.ylabel('Average Fitness of 5 Best Solution Weights')
+    plt.title('Average Fitness Over Generations')
+    plt.grid(True)
+    plt.show()
+
+
 def main():
     # parameter setting 
     population_size = 50   # Population size 
@@ -253,87 +273,102 @@ def main():
     mutation_rate = 0.2
     run_no = 5  # number of runs GA
     # load data 
-    dataset_file = '10_269'  # 23_10000  10_269  100_995
-    knapsack_items, max_capacity, num_items, optimal_value = create_dataset(dataset_file)  # Obtain dataset values into parameter
+    dataset_file = ['10_269','23_10000','100_995']  # 23_10000  10_269  100_995
     
-    # run GA for 5 times
-    best_weights = []  # Store summation weight of best individual each run
-    best_values = []  # Store summation value of best individual each run 
-    best_individuals = []
-
-    seed_value = [20, 40, 60, 80, 100]
-
-    for run in range(run_no):
-        # Generate a different seed for each run
-
-        # Initialize populations
-        populations = initial_pop(population_size, num_items, seed_value[run])
-
-        # Apply Selection process
-        for generation in range(generations):
-            population = selection(populations, knapsack_items, max_capacity)
-
-            # Ilitism 
-            pop_fitness = [(calculate_fitness(individual, knapsack_items, max_capacity)) for individual in population]
-
-            elite_idx = np.argsort(pop_fitness)[::-1][:2]
-            best_individuals = [population[i] for i in elite_idx]
-
-            new_population = []
-            # Apply genetic operation 
-            for i in range(population_size // 2):
-                parent1, parent2 = random.sample(population, 2)
-                child1, child2 = crossover(parent1, parent2, num_items)
-                new_population.append(mutation(child1, num_items, mutation_rate))
-                new_population.append(mutation(child2, num_items, mutation_rate))
-
-            # iliitism to new population
-            new_population.extend(best_individuals)
-
-            # Evaluate fitness of the new population
-            new_population = [(individual, calculate_fitness(individual, knapsack_items, max_capacity)) for individual in new_population]
-
-            # Sort the new population based on fitness
-            new_population = sorted(new_population, key=lambda x: x[1], reverse=True)
-
-            # Update population with a new ossspring, Select the fittest individuals for the next generation
-            population = [individual for individual, _ in new_population[:population_size]]
-            
-            # Stop criteria: if the best individual in the current generation has the optimal value, break the loop go to next run
-            optimal_individual = find_best_individual(population, knapsack_items, max_capacity)
-            if optimal_individual['value'] == optimal_value:
-                break
-            else:
-                optimal_individual = []
+    for file in dataset_file:
+        print(f'DATASET NAME: {file}\n')
+        knapsack_items, max_capacity, num_items, optimal_value = create_dataset(file)  # Obtain dataset values into parameter
+    
+        # run GA for 5 times
+        best_weights = []  # Store summation weight of best individual each run
+        best_values = []  # Store summation value of best individual each run 
+        best_individuals = []
+        best_fitnesses_runs = [] # Store best fitnesses in genereation for each run
         
-        # check if optimal_individual is not empty, then store the best individual for current run
-        # otherwise store the best individual from the produced population
-        if optimal_individual != []:
-            best_individuals.append(optimal_individual['individual'])
-            best_values.append(optimal_individual['value'])
-            best_weights.append(optimal_individual['weight'])
-        else:
-            # Find the best population from produced population
-            temp_best_solution = find_best_individual(population, knapsack_items, max_capacity)
 
-            # Store best (indivisual, values, wights) for current run
-            best_individuals.append(temp_best_solution['individual'])
-            best_values.append(temp_best_solution['value'])
-            best_weights.append(temp_best_solution['weight'])
+        seed_value = [20, 40, 60, 80, 100]
 
-    # Store wights and values of best 5 individual
-    runs_best_individual = {'best_individuals':best_individuals, 'best_weights':best_weights, 'best_values':best_values}
+        for run in range(run_no):
+            print(f'Run {run+1} of {run_no}:')
+            # Reset best wights (during generation) list for each run
+            best_wight_generation = []  # Store best wights in each generation for each run
 
-    # Create a table that store 'mean' and 'stander deviation' for 5 best solution (runs_best_individual)
-    best_wights_mean, best_wights_std = calculate_stats(best_weights)
-    best_values_mean, best_values_std = calculate_stats(best_values)
+            # Initialize populations
+            populations = initial_pop(population_size, num_items, seed_value[run])
 
-    # Create a table hold best 5 solutions with corresponded values, which including: values, wights, mean and STD
-    data_table = create_table(runs_best_individual['best_weights'], runs_best_individual['best_values'], best_values_mean, 
-                              best_values_std, best_wights_mean, best_wights_std)
+            # Apply Selection process
+            for generation in range(generations):
+                print(f'\tGeneration {generation+1} of {generations} . . .')
+                population = selection(populations, knapsack_items, max_capacity)
 
-    print('Optimal Value is: ', optimal_value)
-    print(data_table)
+                # Ilitism 
+                pop_fitness = [(calculate_fitness(individual, knapsack_items, max_capacity)) for individual in population]
+
+                elite_idx = np.argsort(pop_fitness)[::-1][:2]
+                best_individuals = [population[i] for i in elite_idx]
+
+                new_population = []
+                # Apply genetic operation 
+                for i in range(population_size // 2):
+                    parent1, parent2 = random.sample(population, 2)
+                    child1, child2 = crossover(parent1, parent2, num_items)
+                    new_population.append(mutation(child1, num_items, mutation_rate))
+                    new_population.append(mutation(child2, num_items, mutation_rate))
+
+                # iliitism to new population
+                new_population.extend(best_individuals)
+
+                # Evaluate fitness of the new population
+                new_population = [(individual, calculate_fitness(individual, knapsack_items, max_capacity)) for individual in new_population]
+
+                # Sort the new population based on fitness
+                new_population = sorted(new_population, key=lambda x: x[1], reverse=True)
+
+                # Update population with a new ossspring, Select the fittest individuals for the next generation
+                population = [individual for individual, _ in new_population[:population_size]]
+                
+                # Stop criteria: if the best individual in the current generation has the optimal value, break the loop go to next run
+                optimal_individual = find_best_individual(population, knapsack_items, max_capacity)
+                best_wight_generation.append(optimal_individual['weight'])  # Store best individual for each generation
+
+                if optimal_individual['value'] == optimal_value:
+                    break
+                else:
+                    optimal_individual = []
+            
+            # Store the best weights in the generation
+            best_fitnesses_runs.append(best_wight_generation)
+
+            # check if optimal_individual is not empty, then store the best individual for current run
+            # otherwise store the best individual from the produced population
+            if optimal_individual != []:
+                best_individuals.append(optimal_individual['individual'])
+                best_values.append(optimal_individual['value'])
+                best_weights.append(optimal_individual['weight'])
+            else:
+                # Find the best population from produced population
+                temp_best_solution = find_best_individual(population, knapsack_items, max_capacity)
+
+                # Store best (indivisual, values, wights) for current run
+                best_individuals.append(temp_best_solution['individual'])
+                best_values.append(temp_best_solution['value'])
+                best_weights.append(temp_best_solution['weight'])
+
+        # Store wights and values of best 5 individual
+        runs_best_individual = {'best_individuals':best_individuals, 'best_weights':best_weights, 'best_values':best_values}
+         
+        # Create a table that store 'mean' and 'stander deviation' for 5 best solution (runs_best_individual)
+        best_wights_mean, best_wights_std = calculate_stats(best_weights)
+        best_values_mean, best_values_std = calculate_stats(best_values)
+
+        # Create a table hold best 5 solutions with corresponded values, which including: values, wights, mean and STD
+        data_table = create_table(runs_best_individual['best_weights'], runs_best_individual['best_values'], best_values_mean, 
+                                best_values_std, best_wights_mean, best_wights_std)
+
+        print('Optimal Value is: ', optimal_value)
+        print(data_table)
+        plot_curve(best_fitnesses_runs)
+        print('------------------------------------------------')
 
 if __name__ == "__main__":
     main()
